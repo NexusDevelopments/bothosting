@@ -129,4 +129,4 @@ async def removeprofit(ctx, member: discord.Member, amount: int):
     await ctx.send(f'Removed ${amount} from {member.mention} profit. Total: ${user_profits[member.id]}')
 
 # put youir bot token here IDK what your token is so just put it there lol
-bot.run('token')
+bot.run('MTQ2NDQxODg4NDM5OTY2MTQwNA.GKmryJ.z4V_EvnR66sKSDLxq0WUVLO8U5-jt5CpTqTJdE')
